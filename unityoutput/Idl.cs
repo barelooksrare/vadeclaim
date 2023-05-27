@@ -88,108 +88,16 @@ namespace Vadeclaim
         public enum VadeclaimErrorKind : uint
         {
             ItemIdAlreadyCollected = 6000U,
-            ItemNotYetCollected = 6001U
+            ItemNotYetCollected = 6001U,
+            SetNotComplete = 6002U,
+            TooManyMints = 6003U,
+            TooFewMints = 6004U,
+            NotDepositedMint = 6005U
         }
     }
 
     namespace Types
     {
-        public enum CategoryType : byte
-        {
-            Animal,
-            Plant,
-            Mushroom,
-            Artifact
-        }
-
-        public partial class Category
-        {
-            public Tuple<uint> AnimalValue { get; set; }
-
-            public Tuple<uint> PlantValue { get; set; }
-
-            public Tuple<uint> MushroomValue { get; set; }
-
-            public Tuple<uint> ArtifactValue { get; set; }
-
-            public int Serialize(byte[] _data, int initialOffset)
-            {
-                int offset = initialOffset;
-                _data.WriteU8((byte)Type, offset);
-                offset += 1;
-                switch (Type)
-                {
-                    case CategoryType.Animal:
-                        _data.WriteU32(AnimalValue.Item1, offset);
-                        offset += 4;
-                        break;
-                    case CategoryType.Plant:
-                        _data.WriteU32(PlantValue.Item1, offset);
-                        offset += 4;
-                        break;
-                    case CategoryType.Mushroom:
-                        _data.WriteU32(MushroomValue.Item1, offset);
-                        offset += 4;
-                        break;
-                    case CategoryType.Artifact:
-                        _data.WriteU32(ArtifactValue.Item1, offset);
-                        offset += 4;
-                        break;
-                }
-
-                return offset - initialOffset;
-            }
-
-            public CategoryType Type { get; set; }
-
-            public static int Deserialize(ReadOnlySpan<byte> _data, int initialOffset, out Category result)
-            {
-                int offset = initialOffset;
-                result = new Category();
-                result.Type = (CategoryType)_data.GetU8(offset);
-                offset += 1;
-                switch (result.Type)
-                {
-                    case CategoryType.Animal:
-                    {
-                        uint AnimalItem1;
-                        AnimalItem1 = _data.GetU32(offset);
-                        offset += 4;
-                        result.AnimalValue = Tuple.Create(AnimalItem1);
-                        break;
-                    }
-
-                    case CategoryType.Plant:
-                    {
-                        uint PlantItem1;
-                        PlantItem1 = _data.GetU32(offset);
-                        offset += 4;
-                        result.PlantValue = Tuple.Create(PlantItem1);
-                        break;
-                    }
-
-                    case CategoryType.Mushroom:
-                    {
-                        uint MushroomItem1;
-                        MushroomItem1 = _data.GetU32(offset);
-                        offset += 4;
-                        result.MushroomValue = Tuple.Create(MushroomItem1);
-                        break;
-                    }
-
-                    case CategoryType.Artifact:
-                    {
-                        uint ArtifactItem1;
-                        ArtifactItem1 = _data.GetU32(offset);
-                        offset += 4;
-                        result.ArtifactValue = Tuple.Create(ArtifactItem1);
-                        break;
-                    }
-                }
-
-                return offset - initialOffset;
-            }
-        }
     }
 
     public partial class VadeclaimClient : TransactionalBaseClient<VadeclaimErrorKind>
@@ -242,15 +150,15 @@ namespace Vadeclaim
             return await SignAndSendTransaction(instr, feePayer, signingCallback);
         }
 
-        public async Task<RequestResult<string>> SendClaimRewardAsync(ClaimRewardAccounts accounts, Category cat, PublicKey feePayer, Func<byte[], PublicKey, byte[]> signingCallback, PublicKey programId)
+        public async Task<RequestResult<string>> SendClaimRewardAsync(ClaimRewardAccounts accounts, byte[] bumps, PublicKey feePayer, Func<byte[], PublicKey, byte[]> signingCallback, PublicKey programId)
         {
-            Solnet.Rpc.Models.TransactionInstruction instr = Program.VadeclaimProgram.ClaimReward(accounts, cat, programId);
+            Solnet.Rpc.Models.TransactionInstruction instr = Program.VadeclaimProgram.ClaimReward(accounts, bumps, programId);
             return await SignAndSendTransaction(instr, feePayer, signingCallback);
         }
 
         protected override Dictionary<uint, ProgramError<VadeclaimErrorKind>> BuildErrorsDictionary()
         {
-            return new Dictionary<uint, ProgramError<VadeclaimErrorKind>>{{6000U, new ProgramError<VadeclaimErrorKind>(VadeclaimErrorKind.ItemIdAlreadyCollected, "Item Id already collected")}, {6001U, new ProgramError<VadeclaimErrorKind>(VadeclaimErrorKind.ItemNotYetCollected, "Item Id not yet collected")}, };
+            return new Dictionary<uint, ProgramError<VadeclaimErrorKind>>{{6000U, new ProgramError<VadeclaimErrorKind>(VadeclaimErrorKind.ItemIdAlreadyCollected, "Item Id already collected")}, {6001U, new ProgramError<VadeclaimErrorKind>(VadeclaimErrorKind.ItemNotYetCollected, "Item Id not yet collected")}, {6002U, new ProgramError<VadeclaimErrorKind>(VadeclaimErrorKind.SetNotComplete, "Can't claim without all the pieces, sorry.")}, {6003U, new ProgramError<VadeclaimErrorKind>(VadeclaimErrorKind.TooManyMints, "Too many mints ser")}, {6004U, new ProgramError<VadeclaimErrorKind>(VadeclaimErrorKind.TooFewMints, "Not enough mints ser")}, {6005U, new ProgramError<VadeclaimErrorKind>(VadeclaimErrorKind.NotDepositedMint, "Stop injecting random mints")}, };
         }
     }
 
@@ -271,8 +179,6 @@ namespace Vadeclaim
             public PublicKey DestinationAccount { get; set; }
 
             public PublicKey Mint { get; set; }
-
-            public PublicKey ProgramAuth { get; set; }
 
             public PublicKey TokenProgram { get; set; }
 
@@ -295,7 +201,7 @@ namespace Vadeclaim
 
             public PublicKey Mint { get; set; }
 
-            public PublicKey ProgramAuth { get; set; }
+            public PublicKey AssociatedTokenProgram { get; set; }
 
             public PublicKey TokenProgram { get; set; }
 
@@ -314,6 +220,8 @@ namespace Vadeclaim
 
             public PublicKey SourceAccount { get; set; }
 
+            public PublicKey CategoryAuth { get; set; }
+
             public PublicKey ProgramAuth { get; set; }
 
             public PublicKey AssociatedTokenProgram { get; set; }
@@ -328,7 +236,7 @@ namespace Vadeclaim
             public static Solnet.Rpc.Models.TransactionInstruction Deposit(DepositAccounts accounts, PublicKey programId)
             {
                 List<Solnet.Rpc.Models.AccountMeta> keys = new()
-                {Solnet.Rpc.Models.AccountMeta.Writable(accounts.Signer, true), Solnet.Rpc.Models.AccountMeta.Writable(accounts.Counter, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.CategoryAuth, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.MetadataAccount, false), Solnet.Rpc.Models.AccountMeta.Writable(accounts.SourceAccount, false), Solnet.Rpc.Models.AccountMeta.Writable(accounts.DestinationAccount, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.Mint, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.ProgramAuth, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.TokenProgram, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.SystemProgram, false)};
+                {Solnet.Rpc.Models.AccountMeta.Writable(accounts.Signer, true), Solnet.Rpc.Models.AccountMeta.Writable(accounts.Counter, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.CategoryAuth, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.MetadataAccount, false), Solnet.Rpc.Models.AccountMeta.Writable(accounts.SourceAccount, false), Solnet.Rpc.Models.AccountMeta.Writable(accounts.DestinationAccount, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.Mint, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.TokenProgram, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.SystemProgram, false)};
                 byte[] _data = new byte[1200];
                 int offset = 0;
                 _data.WriteU64(13182846803881894898UL, offset);
@@ -341,7 +249,7 @@ namespace Vadeclaim
             public static Solnet.Rpc.Models.TransactionInstruction Withdraw(WithdrawAccounts accounts, PublicKey programId)
             {
                 List<Solnet.Rpc.Models.AccountMeta> keys = new()
-                {Solnet.Rpc.Models.AccountMeta.Writable(accounts.Signer, true), Solnet.Rpc.Models.AccountMeta.Writable(accounts.Counter, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.CategoryAuth, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.MetadataAccount, false), Solnet.Rpc.Models.AccountMeta.Writable(accounts.SourceAccount, false), Solnet.Rpc.Models.AccountMeta.Writable(accounts.DestinationAccount, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.Mint, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.ProgramAuth, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.TokenProgram, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.SystemProgram, false)};
+                {Solnet.Rpc.Models.AccountMeta.Writable(accounts.Signer, true), Solnet.Rpc.Models.AccountMeta.Writable(accounts.Counter, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.CategoryAuth, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.MetadataAccount, false), Solnet.Rpc.Models.AccountMeta.Writable(accounts.SourceAccount, false), Solnet.Rpc.Models.AccountMeta.Writable(accounts.DestinationAccount, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.Mint, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.AssociatedTokenProgram, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.TokenProgram, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.SystemProgram, false)};
                 byte[] _data = new byte[1200];
                 int offset = 0;
                 _data.WriteU64(2495396153584390839UL, offset);
@@ -351,15 +259,18 @@ namespace Vadeclaim
                 return new Solnet.Rpc.Models.TransactionInstruction{Keys = keys, ProgramId = programId.KeyBytes, Data = resultData};
             }
 
-            public static Solnet.Rpc.Models.TransactionInstruction ClaimReward(ClaimRewardAccounts accounts, Category cat, PublicKey programId)
+            public static Solnet.Rpc.Models.TransactionInstruction ClaimReward(ClaimRewardAccounts accounts, byte[] bumps, PublicKey programId)
             {
                 List<Solnet.Rpc.Models.AccountMeta> keys = new()
-                {Solnet.Rpc.Models.AccountMeta.Writable(accounts.Signer, true), Solnet.Rpc.Models.AccountMeta.Writable(accounts.Counter, false), Solnet.Rpc.Models.AccountMeta.Writable(accounts.DestinationAccount, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.RewardMint, false), Solnet.Rpc.Models.AccountMeta.Writable(accounts.SourceAccount, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.ProgramAuth, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.AssociatedTokenProgram, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.TokenProgram, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.SystemProgram, false)};
+                {Solnet.Rpc.Models.AccountMeta.Writable(accounts.Signer, true), Solnet.Rpc.Models.AccountMeta.Writable(accounts.Counter, false), Solnet.Rpc.Models.AccountMeta.Writable(accounts.DestinationAccount, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.RewardMint, false), Solnet.Rpc.Models.AccountMeta.Writable(accounts.SourceAccount, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.CategoryAuth, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.ProgramAuth, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.AssociatedTokenProgram, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.TokenProgram, false), Solnet.Rpc.Models.AccountMeta.ReadOnly(accounts.SystemProgram, false)};
                 byte[] _data = new byte[1200];
                 int offset = 0;
                 _data.WriteU64(11717902644310007701UL, offset);
                 offset += 8;
-                offset += cat.Serialize(_data, offset);
+                _data.WriteS32(bumps.Length, offset);
+                offset += 4;
+                _data.WriteSpan(bumps, offset);
+                offset += bumps.Length;
                 byte[] resultData = new byte[offset];
                 Array.Copy(_data, resultData, offset);
                 return new Solnet.Rpc.Models.TransactionInstruction{Keys = keys, ProgramId = programId.KeyBytes, Data = resultData};
