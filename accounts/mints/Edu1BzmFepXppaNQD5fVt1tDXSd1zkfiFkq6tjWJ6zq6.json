@@ -1,0 +1,13 @@
+{
+  "pubkey": "Edu1BzmFepXppaNQD5fVt1tDXSd1zkfiFkq6tjWJ6zq6",
+  "account": {
+    "data": [
+      "AQAAAK4/WRXEXD/a4jpnxRLSvQTB+HzAqg92s24/kDyVa4oiAQAAAAAAAAAAAQEAAACuP1kVxFw/2uI6Z8US0r0Ewfh8wKoPdrNuP5A8lWuKIg==",
+      "base64"
+    ],
+    "executable": false,
+    "lamports": 1461600,
+    "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "rentEpoch": 0
+  }
+}

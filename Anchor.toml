@@ -1,0 +1,32 @@
+[features]
+seeds = false
+skip-lint = false
+[programs.localnet]
+vadeclaim = "vadebu9gx5FpP4HQNMdyY51jjTyHbSWCce2RGoGj7mE"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "Localnet"
+wallet = "/Users/bare/NFT/zenrepublic/testUser.json"
+
+[scripts]
+test = "zsh tests/test.sh tests/csproj unityoutput"
+#test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+
+[[test.validator.account_dir]]
+directory = "/Users/bare/anchor/vadeclaim/accounts/mints/"
+
+[[test.validator.account_dir]]
+directory = "/Users/bare/anchor/vadeclaim/accounts/tokenAccounts/"
+
+[[test.validator.account_dir]]
+directory = "/Users/bare/anchor/vadeclaim/accounts/"
+
+[[test.validator.account_dir]]
+directory = "/Users/bare/anchor/vadeclaim/accounts/rewardAccounts/"
+
+[[test.validator.account_dir]]
+directory = "/Users/bare/anchor/vadeclaim/accounts/metadata/"
+

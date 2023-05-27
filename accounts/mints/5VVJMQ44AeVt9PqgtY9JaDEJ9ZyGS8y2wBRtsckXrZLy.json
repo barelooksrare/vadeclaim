@@ -1,0 +1,13 @@
+{
+  "pubkey": "5VVJMQ44AeVt9PqgtY9JaDEJ9ZyGS8y2wBRtsckXrZLy",
+  "account": {
+    "data": [
+      "AQAAAFJord9vMHwXNl/o42st8JLxXyiYrl7KpQOFc9/xVdCPAQAAAAAAAAAAAQEAAABSaK3fbzB8FzZf6ONrLfCS8V8omK5eyqUDhXPf8VXQjw==",
+      "base64"
+    ],
+    "executable": false,
+    "lamports": 1461600,
+    "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "rentEpoch": 0
+  }
+}
