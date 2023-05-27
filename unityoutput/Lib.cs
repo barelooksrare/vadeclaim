@@ -7,6 +7,8 @@ using Solana.Unity.Rpc.Models;
 using Solana.Unity.Wallet;
 using Vadeclaim.Program;
 using Vadeclaim.Types;
+using Solana.Unity.Rpc;
+using System.Threading.Tasks;
 
 namespace Vadeclaim.Utils
 {
@@ -204,6 +206,15 @@ namespace Vadeclaim.Utils
                 instruction.Keys.Add(AccountMeta.Writable(item.Key, false));
             }
             return instruction;
+        }
+
+        public static async Task<List<PublicKey>> GetDepositedMintsForCategory(PublicKey user, Category cat, IRpcClient rpc){
+            var tokenAccounts = await rpc.GetTokenAccountsByOwnerAsync(GetCategoryAuthAccount(user, cat).Key);
+            var mints = new List<PublicKey>();
+            foreach (var account in tokenAccounts.Result.Value){
+                mints.Add(new PublicKey(account.Account.Data.Parsed.Info.Mint));
+            }
+            return mints;
         }
     }
 
