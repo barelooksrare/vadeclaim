@@ -209,7 +209,7 @@ namespace Vadeclaim.Utils
         }
 
         public static async Task<List<PublicKey>> GetDepositedMintsForCategory(PublicKey user, Category cat, IRpcClient rpc){
-            var tokenAccounts = await rpc.GetTokenAccountsByOwnerAsync(GetCategoryAuthAccount(user, cat).Key);
+            var tokenAccounts = await rpc.GetTokenAccountsByOwnerAsync(GetCategoryAuthAccount(user, cat).Key, null, TokenProgram.ProgramIdKey);
             var mints = new List<PublicKey>();
             foreach (var account in tokenAccounts.Result.Value){
                 mints.Add(new PublicKey(account.Account.Data.Parsed.Info.Mint));
